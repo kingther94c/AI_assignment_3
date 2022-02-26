@@ -1,5 +1,6 @@
 import unittest
 from submission import *
+
 """
 Contains various local tests for Assignment 3.
 """

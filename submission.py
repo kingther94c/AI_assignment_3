@@ -15,13 +15,24 @@ from pgmpy.inference import VariableElimination
 # pgmpy.factors.*
 # pgmpy.estimators.*
 
+
 def make_power_plant_net():
     """Create a Bayes Net representation of the above power plant problem. 
     Use the following as the name attribute: "alarm","faulty alarm", "gauge","faulty gauge", "temperature". (for the tests to work.)
     """
     BayesNet = BayesianModel()
-    # TODO: finish this function    
-    raise NotImplementedError
+    BayesNet.add_node("alarm")
+    BayesNet.add_node("faulty alarm")
+    BayesNet.add_node("gauge")
+    BayesNet.add_node("faulty gauge")
+    BayesNet.add_node("temperature")
+
+    BayesNet.add_edge("temperature", "faulty gauge")
+    BayesNet.add_edge("temperature", "gauge")
+    BayesNet.add_edge("faulty_gauge", "gauge")
+    BayesNet.add_edge("gauge", "alarm")
+    BayesNet.add_edge("faulty alarm", "alarm")
+
     return BayesNet
 
 
@@ -29,9 +40,12 @@ def set_probability(bayes_net):
     """Set probability distribution for each node in the power plant system.
     Use the following as the name attribute: "alarm","faulty alarm", "gauge","faulty gauge", "temperature". (for the tests to work.)
     """
-    # TODO: set the probability distribution for each node
-    raise NotImplementedError    
-    return bayes_net
+    cpd_temperature = TabularCPD("temperature", 2, values=[[0.8], [0.2]])
+    cpd_faulty_gauge = TabularCPD("faulty gauge", 2, values=[[.95, .2], [.05, .8]], evidence=["temperature"], evidence_card=[2])
+    cpd_gauge = TabularCPD("gauge", 2, values=[[.95, .2, .05, .8], [.05, .8, .95, .2]], evidence=["temperature", "faulty gauge"], evidence_card=[2, 2])
+    cpd_faulty_alarm = TabularCPD("faulty alarm", 2, values=[[.2], [.8]])
+    cpd_alarm = TabularCPD("alarm", 2, values=[[.9, .55, .1, .45], [.1, .45, .9, .55]], evidence=["gauge", "faulty alarm"], evidence_card=[2, 2])
+    bayes_net.add_cpds(cpd_gauge, cpd_faulty_gauge, cpd_faulty_alarm, cpd_temperature, cpd_alarm)
 
 
 def get_alarm_prob(bayes_net):
@@ -39,9 +53,10 @@ def get_alarm_prob(bayes_net):
     probability of the alarm 
     ringing in the 
     power plant system."""
-    # TODO: finish this function
-    raise NotImplementedError
-    return alarm_prob
+    solver = VariableElimination(bayes_net)
+    marginal_prob = solver.query(variables=['alarm'], joint=False)
+    prob = marginal_prob['alarm'].values[1]
+    return prob
 
 
 def get_gauge_prob(bayes_net):
@@ -49,20 +64,22 @@ def get_gauge_prob(bayes_net):
     probability of the gauge 
     showing hot in the 
     power plant system."""
-    # TODO: finish this function
-    raise NotImplementedError
-    return gauge_prob
+    solver = VariableElimination(bayes_net)
+    marginal_prob = solver.query(variables=['gauge'], joint=False)
+    prob = marginal_prob['gauge'].values[1]
+    return prob
 
 
 def get_temperature_prob(bayes_net):
-    """Calculate the conditional probability 
+    """Calculate the conditional probability
     of the temperature being hot in the
     power plant system, given that the
     alarm sounds and neither the gauge
     nor alarm is faulty."""
-    # TODO: finish this function
-    raise NotImplementedError
-    return temp_prob
+    solver = VariableElimination(bayes_net)
+    marginal_prob = solver.query(variables=['temperature'], joint=False)
+    prob = marginal_prob['temperature'].values[1]
+    return prob
 
 
 def get_game_network():
